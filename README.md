@@ -27,7 +27,7 @@ Pro tip, on Windows use the [Voicemeeter Banana](https://vb-audio.com/Voicemeete
 
 ## Optional hardware mod
 
-If you install a [PT8211 Audio Kit for Teensy 3.x](https://www.pjrc.com/store/pt8211_kit.html) on your Scopeclock's Teensy it will also output the audio there, with the level controlled by the PC volume independently of the scope display size. That's what's actually used in the demo above.
+If you install a [PT8211 Audio Kit for Teensy 3.x](https://www.pjrc.com/store/pt8211_kit.html) on your Scopeclock's Teensy it will also output the audio there, with the level controlled by the PC volume independently of the scope display size. That's what's actually used in the demo above, with the JBL speaker as output.
 
 ![IMG_20220102_120553](https://user-images.githubusercontent.com/6065069/147874796-16991ea7-24d3-4f9f-9480-8bc852ecb849.jpg)
 
