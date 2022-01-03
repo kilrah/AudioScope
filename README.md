@@ -12,14 +12,13 @@ The beam is blanked after 5 seconds of little movement to avoid hitting the scre
 
 This demo shows [Jerobeam Fenderson's](https://oscilloscopemusic.com/) Kickstarter [video](https://www.youtube.com/watch?v=qnL40CbuodU) from 2015. The compression is visible, for example the Death Star is all mushy while it looks perfect when playing the WAV version instead of the video audio.
 
-[![Demo](https://yt-embed.herokuapp.com/embed?v=GAK96sah6cw)](https://www.youtube.com/watch?v=GAK96sah6cw)
+[![XY Demo](https://yt-embed.herokuapp.com/embed?v=GAK96sah6cw)](https://www.youtube.com/watch?v=GAK96sah6cw)
 
 ### New 22.01.03: Now supports time-based display!
 
 A long press of the rotary encoder will toggle between X-Y and Y-T modes. In Y-T mode the left pot adjusts signal amplitude (only the right channel signal is displayed) and the right pot adjusts sweep frequency.
 
-![IMG_20220103_154725](https://user-images.githubusercontent.com/6065069/147945489-6d405349-ef22-4fb3-8b04-8cd7ff58ea01.jpg)
-
+[![Waveform Demo](https://yt-embed.herokuapp.com/embed?v=tQQd2wUsB_g)](https://www.youtube.com/watch?v=tQQd2wUsB_g)
 
 ## Building/installing
 
