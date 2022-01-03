@@ -132,7 +132,7 @@ void loop() {
       // Set audio gain from left pot and timebase from right pot, disable DC offset
       mixerY.gain(0, (float)map(analogRead(XPosPin), 0, 1024, 0, 300)/100);
       mixerY.gain(1, 0);
-      waveform1.frequency(map(analogRead(YPosPin), 0, 1024, 5, 100));
+      waveform1.frequency(map(analogRead(YPosPin), 0, 1024, 5, 200));
 
       // Blanking reacts to sound only
       mixerRMS.gain(0, 0);
