@@ -14,6 +14,9 @@ This demo shows [Jerobeam Fenderson's](https://oscilloscopemusic.com/) Kickstart
 
 [![XY Demo](https://yt-embed.herokuapp.com/embed?v=GAK96sah6cw)](https://www.youtube.com/watch?v=GAK96sah6cw)
 
+Other demo, close-up:
+https://www.youtube.com/watch?v=C2VlYvGJmeg
+
 ### New 22.01.03: Now supports time-based display!
 
 A long press of the rotary encoder will toggle between X-Y and Y-T modes. In Y-T mode the left pot adjusts signal amplitude (only the right channel signal is displayed), the right pot adjusts sweep frequency and the encoder adjusts vertical position, push to reset.
