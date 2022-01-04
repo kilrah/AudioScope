@@ -94,18 +94,25 @@ void loop() {
 
     // Mode toggle
     if(rotenc.isLongPressed()) {
-      if(mode == 0)
+      if(mode == 0) {
         mode = 1;
-      else
+        rotenc.setLimits(-50, 50);
+      }
+      else {
         mode = 0;
+        rotenc.setLimits(-20, 40);
+      }
       while(rotenc.isPressed())
         rotenc.update();
+      rotenc.setPosition(0);
     }
 
+    // Pressing encoder resets position
+    if(rotenc.isPressed())
+      rotenc.setPosition(0);
+
     if(mode == 0) {  // XY
-      // Set scope gain from rotary encoder, press to reset to default of 1
-      if(rotenc.isPressed())
-        rotenc.setPosition(0);
+      // Set scope gain from rotary encoder
       float gain = ((float)map(rotenc.getPosition(), -20, 10, 0, 150))/100;
       
       // Disable time waveform, ensure DC offset is used, set gain as per above for both channels
@@ -114,7 +121,6 @@ void loop() {
       mixerX.gain(2, 0);    // Sawtooth
       
       mixerY.gain(0, gain); // Sound
-      mixerY.gain(1, 1);    // DC
       
       // Blanking reacts to both axes
       mixerRMS.gain(0, 1);
@@ -128,10 +134,12 @@ void loop() {
       mixerX.gain(0, 0);  // Sound
       mixerX.gain(1, 0);  // DC
       mixerX.gain(2, 1);  // Sawtooth
+
+      // Set Y position from rotary encoder
+      dcY.amplitude((float)rotenc.getPosition()/100);
       
-      // Set audio gain from left pot and timebase from right pot, disable DC offset
+      // Set audio gain from left pot and timebase from right pot
       mixerY.gain(0, (float)map(analogRead(XPosPin), 0, 1024, 0, 300)/100);
-      mixerY.gain(1, 0);
       waveform1.frequency(map(analogRead(YPosPin), 0, 1024, 5, 200));
 
       // Blanking reacts to sound only
