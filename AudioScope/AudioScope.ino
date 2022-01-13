@@ -19,35 +19,43 @@
 #include <SPI.h>
 #include "driver_encoder.h"
 
+const int MAX_MODES = 3;
+
 // GUItool: begin automatically generated code
-AudioInputUSB            usb1;           //xy=377,576
-AudioSynthWaveform       waveform1;      //xy=530,413
-AudioSynthWaveformDc     dcX;            //xy=582,531
-AudioSynthWaveformDc     dcY;            //xy=583,613
-AudioAmplifier           ampL;           //xy=585,703
-AudioAmplifier           ampR;           //xy=585,761
-AudioMixer4              mixerX;         //xy=731,502
-AudioMixer4              mixerY;         //xy=738,591
-AudioOutputPT8211        pt821_1;        //xy=763,733
-AudioOutputAnalogStereo  dacs1;          //xy=923,544
-AudioMixer4              mixerRMS;       //xy=936,661
-AudioFilterStateVariable filterRMS;      //xy=1109,651
-AudioAnalyzeRMS          rms1;           //xy=1282,652
+AudioInputUSB            usb1;           //xy=343,541
+AudioAnalyzeFFT256       fft256_R;       //xy=403,758
+AudioAnalyzeFFT256       fft256L;       //xy=432,333
+AudioSynthWaveform       waveform1;      //xy=543,402
+AudioSynthWaveformDc     dcX;            //xy=548,496
+AudioSynthWaveformDc     dcY;            //xy=549,578
+AudioAmplifier           ampL;           //xy=551,668
+AudioAmplifier           ampR;           //xy=551,726
+AudioPlayQueue           queueFFT;         //xy=562,622
+AudioMixer4              mixerX;         //xy=697,467
+AudioMixer4              mixerY;         //xy=704,556
+AudioOutputPT8211        pt821_1;        //xy=729,698
+AudioOutputAnalogStereo  dacs1;          //xy=889,509
+AudioMixer4              mixerRMS;       //xy=902,626
+AudioFilterStateVariable filterRMS;      //xy=1075,616
+AudioAnalyzeRMS          rms1;           //xy=1248,617
 AudioConnection          patchCord1(usb1, 0, mixerX, 0);
 AudioConnection          patchCord2(usb1, 0, ampL, 0);
-AudioConnection          patchCord3(usb1, 1, mixerY, 0);
-AudioConnection          patchCord4(usb1, 1, ampR, 0);
-AudioConnection          patchCord5(waveform1, 0, mixerX, 2);
-AudioConnection          patchCord6(dcX, 0, mixerX, 1);
-AudioConnection          patchCord7(dcY, 0, mixerY, 1);
-AudioConnection          patchCord8(ampL, 0, pt821_1, 0);
-AudioConnection          patchCord9(ampR, 0, pt821_1, 1);
-AudioConnection          patchCord10(mixerX, 0, dacs1, 0);
-AudioConnection          patchCord11(mixerX, 0, mixerRMS, 0);
-AudioConnection          patchCord12(mixerY, 0, dacs1, 1);
-AudioConnection          patchCord13(mixerY, 0, mixerRMS, 1);
-AudioConnection          patchCord14(mixerRMS, 0, filterRMS, 0);
-AudioConnection          patchCord15(filterRMS, 2, rms1, 0);
+AudioConnection          patchCord3(usb1, 0, fft256L, 0);
+AudioConnection          patchCord4(usb1, 1, mixerY, 0);
+AudioConnection          patchCord5(usb1, 1, ampR, 0);
+AudioConnection          patchCord6(usb1, 1, fft256_R, 0);
+AudioConnection          patchCord7(waveform1, 0, mixerX, 2);
+AudioConnection          patchCord8(dcX, 0, mixerX, 1);
+AudioConnection          patchCord9(dcY, 0, mixerY, 1);
+AudioConnection          patchCord10(ampL, 0, pt821_1, 0);
+AudioConnection          patchCord11(ampR, 0, pt821_1, 1);
+AudioConnection          patchCord12(queueFFT, 0, mixerY, 3);
+AudioConnection          patchCord13(mixerX, 0, dacs1, 0);
+AudioConnection          patchCord14(mixerX, 0, mixerRMS, 0);
+AudioConnection          patchCord15(mixerY, 0, dacs1, 1);
+AudioConnection          patchCord16(mixerY, 0, mixerRMS, 1);
+AudioConnection          patchCord17(mixerRMS, 0, filterRMS, 0);
+AudioConnection          patchCord18(filterRMS, 2, rms1, 0);
 // GUItool: end automatically generated code
 
 // SCTVClock pins
@@ -69,10 +77,11 @@ elapsedMillis controls = 0;
 elapsedMillis rmsBlank = 0;
 
 int mode = 0;
+int16_t *queueYBuffer = NULL;
 
 void setup() {
-  //Serial.begin(115200);
-  AudioMemory(10);
+  Serial.begin(115200);
+  AudioMemory(20);
   pinMode(BlankPin, OUTPUT);
   dacs1.analogReference(EXTERNAL);
   filterRMS.frequency(100);
@@ -82,7 +91,12 @@ void setup() {
   waveform1.offset(0.1);
   rotenc.begin(encAPin, encBPin, encButPin);
   rotenc.setLimits(-20, 40);
+  fft256L.averageTogether(4);
+  queueYBuffer = queueFFT.getBuffer();
+  for(int i = 0; i<128; i++)
+    queueYBuffer[i] = 0;  
   digitalWrite(BlankPin, HIGH);       // Enable beam
+  //mode = 2;
 }
 
 void loop() {
@@ -94,12 +108,12 @@ void loop() {
 
     // Mode toggle
     if(rotenc.isLongPressed()) {
+      ++mode %= MAX_MODES;
+      Serial.println(mode);
       if(mode == 0) {
-        mode = 1;
         rotenc.setLimits(-50, 50);
       }
       else {
-        mode = 0;
         rotenc.setLimits(-20, 40);
       }
       while(rotenc.isPressed())
@@ -119,8 +133,10 @@ void loop() {
       mixerX.gain(0, gain); // Sound
       mixerX.gain(1, 1);    // DC
       mixerX.gain(2, 0);    // Sawtooth
+      mixerX.gain(3, 0);
       
       mixerY.gain(0, gain); // Sound
+      mixerY.gain(3, 0);
       
       // Blanking reacts to both axes
       mixerRMS.gain(0, 1);
@@ -129,21 +145,35 @@ void loop() {
       dcX.amplitude((float)map(analogRead(XPosPin), 0, 1024, -100, 100)/100);
       dcY.amplitude((float)map(analogRead(YPosPin), 0, 1024, -100, 100)/100);
     }
-    else { // YT
+    else if(mode == 1) { // YT
       // Disable audio input and DC offset for X axis, enable sawtooth waveform
       mixerX.gain(0, 0);  // Sound
       mixerX.gain(1, 0);  // DC
       mixerX.gain(2, 1);  // Sawtooth
+      mixerX.gain(3, 0);
 
       // Set Y position from rotary encoder
       dcY.amplitude((float)rotenc.getPosition()/100);
       
       // Set audio gain from left pot and timebase from right pot
+      mixerY.gain(3, 0);
       mixerY.gain(0, (float)map(analogRead(XPosPin), 0, 1024, 0, 300)/100);
       waveform1.frequency(map(analogRead(YPosPin), 0, 1024, 5, 200));
 
       // Blanking reacts to sound only
       mixerRMS.gain(0, 0);
+    } 
+    else if(mode == 2) { // Spectrum
+      
+      mixerX.gain(0, 0);  // Sound
+      mixerX.gain(1, 0);  // DC
+      mixerX.gain(2, 1);  // Sawtooth
+
+      waveform1.frequency(172);
+
+      mixerY.gain(0, 0);
+      mixerY.gain(1, 0);
+      mixerY.gain(3, 1);
     }
 
     // Set audio out gain from PC volume
@@ -159,5 +189,13 @@ void loop() {
       digitalWrite(BlankPin, LOW);
     else
       digitalWrite(BlankPin, HIGH);
+  }
+  if(mode == 2) {
+    if(fft256L.available()) {
+      for(int i = 10; i<128; i++)
+        queueYBuffer[i] = (float)fft256L.output[i]*map(analogRead(XPosPin), 0, 1024, 1, 200);
+      //AudioNoInterrupts();
+      queueFFT.playBuffer();
+    }
   }
 }
